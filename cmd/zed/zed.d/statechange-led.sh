@@ -144,6 +144,10 @@ process_pool()
 		fi
 
 		val=$(state_to_val "$state")
+		# val can be empty if there is no defined state, that's OK
+		if [ -z "$val" ]; then
+			continue
+		fi
 
 		if [ "$current_val" = "$val" ] ; then
 			# LED is already set correctly
@@ -169,7 +173,10 @@ if [ -n "$ZEVENT_VDEV_ENC_SYSFS_PATH" ] && [ -n "$ZEVENT_VDEV_STATE_STR" ] ; the
 	# Got a statechange for an individual VDEV
 	val=$(state_to_val "$ZEVENT_VDEV_STATE_STR")
 	vdev=$(basename "$ZEVENT_VDEV_PATH")
-	check_and_set_led "$ZEVENT_VDEV_ENC_SYSFS_PATH/fault" "$val"
+	# val can be empty if there is no defined state, that's OK
+	if [ -n "$val" ]; then
+		check_and_set_led "$ZEVENT_VDEV_ENC_SYSFS_PATH/fault" "$val"
+	fi
 else
 	# Process the entire pool
 	poolname=$(zed_guid_to_pool "$ZEVENT_POOL_GUID")
