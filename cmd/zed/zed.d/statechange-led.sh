@@ -89,15 +89,22 @@ check_and_set_led()
 }
 
 state_to_val()
-{
-	state="$1"
-	if [ "$state" = "FAULTED" ] || [ "$state" = "DEGRADED" ] || \
-	   [ "$state" = "UNAVAIL" ] ; then
-		echo 1
-	elif [ "$state" = "ONLINE" ] ; then
-		echo 0
+(
+	# Want local variables, but POSIX doesn't have the local keyword.
+	# Work around by having the function be a subshell, ie (func) instead
+	# of {func}.
+	led="$1"
+	state="$2"
+
+	if [ "$led" = "fault" ]; then
+		if [ "$state" = "FAULTED" ] || [ "$state" = "DEGRADED" ] || \
+		   [ "$state" = "UNAVAIL" ] ; then
+			echo 1
+		elif [ "$state" = "ONLINE" ] ; then
+			echo 0
+		fi
 	fi
-}
+)
 
 # process_pool ([pool])
 #
@@ -143,7 +150,7 @@ process_pool()
 			continue;
 		fi
 
-		val=$(state_to_val "$state")
+		val=$(state_to_val fault "$state")
 		# val can be empty if there is no defined state, that's OK
 		if [ -z "$val" ]; then
 			continue
@@ -171,7 +178,7 @@ process_pool()
 
 if [ -n "$ZEVENT_VDEV_ENC_SYSFS_PATH" ] && [ -n "$ZEVENT_VDEV_STATE_STR" ] ; then
 	# Got a statechange for an individual VDEV
-	val=$(state_to_val "$ZEVENT_VDEV_STATE_STR")
+	val=$(state_to_val fault "$ZEVENT_VDEV_STATE_STR")
 	vdev=$(basename "$ZEVENT_VDEV_PATH")
 	# val can be empty if there is no defined state, that's OK
 	if [ -n "$val" ]; then
