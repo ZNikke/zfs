@@ -103,6 +103,12 @@ state_to_val()
 		elif [ "$state" = "ONLINE" ] ; then
 			echo 0
 		fi
+	elif [ "$led" = "locate" ]; then
+		if [ "$state" = "OFFLINE" ]; then
+			echo 1
+		else
+			echo 0
+		fi
 	fi
 )
 
@@ -178,12 +184,15 @@ process_pool()
 
 if [ -n "$ZEVENT_VDEV_ENC_SYSFS_PATH" ] && [ -n "$ZEVENT_VDEV_STATE_STR" ] ; then
 	# Got a statechange for an individual VDEV
-	val=$(state_to_val fault "$ZEVENT_VDEV_STATE_STR")
 	vdev=$(basename "$ZEVENT_VDEV_PATH")
-	# val can be empty if there is no defined state, that's OK
-	if [ -n "$val" ]; then
-		check_and_set_led "$ZEVENT_VDEV_ENC_SYSFS_PATH/fault" "$val"
-	fi
+	for led in fault locate
+	do
+		val=$(state_to_val $led "$ZEVENT_VDEV_STATE_STR")
+		# val can be empty if there is no defined state, that's OK
+		if [ -n "$val" ]; then
+			check_and_set_led "$ZEVENT_VDEV_ENC_SYSFS_PATH/$led" "$val"
+		fi
+	done
 else
 	# Process the entire pool
 	poolname=$(zed_guid_to_pool "$ZEVENT_POOL_GUID")
